@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # README
 
 ## About
@@ -17,3 +18,7 @@ to this in your browser, and you can call your Go code from devtools.
 ## Building
 
 To build a redistributable, production mode package, use `wails build`.
+=======
+# DataLocker
+DRM/폴더 및 파일 암복호화 팀프로젝트
+>>>>>>> 07904f98ca560afc504d180a65cd92c2c2760b90
