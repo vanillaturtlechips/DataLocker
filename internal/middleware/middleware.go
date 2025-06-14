@@ -1,8 +1,8 @@
+// Package middleware provides HTTP middleware components for DataLocker server.
+// It includes logging, CORS, security, recovery, and error handling middleware.
 package middleware
 
 import (
-	"DataLocker/internal/config"
-	"DataLocker/pkg/response"
 	"fmt"
 	"runtime/debug"
 	"time"
@@ -10,6 +10,30 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/sirupsen/logrus"
+
+	"DataLocker/internal/config"
+	"DataLocker/pkg/response"
+)
+
+// HTTP 상태 코드 상수
+const (
+	HTTPBadRequest          = 400
+	HTTPUnauthorized        = 401
+	HTTPForbidden           = 403
+	HTTPNotFound            = 404
+	HTTPInternalServerError = 500
+)
+
+// 미들웨어 설정 상수
+const (
+	// CORS 캐시 시간 (24시간을 초 단위로)
+	CORSMaxAgeSeconds = 24 * 60 * 60 // 86400초
+
+	// Rate Limiter 기본 제한 (분당 요청 수)
+	DefaultRateLimitPerMinute = 100
+
+	// 에러 응답 임계값 (4xx, 5xx 에러)
+	HTTPErrorStatusThreshold = 400
 )
 
 // SetupMiddleware 모든 미들웨어를 설정합니다
@@ -23,7 +47,7 @@ func SetupMiddleware(e *echo.Echo, cfg *config.Config, logger *logrus.Logger) {
 		AllowMethods:     []string{echo.GET, echo.POST, echo.PUT, echo.DELETE, echo.OPTIONS},
 		AllowHeaders:     []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization},
 		AllowCredentials: true,
-		MaxAge:           86400, // 24시간
+		MaxAge:           CORSMaxAgeSeconds,
 	}))
 
 	// 요청 로깅 미들웨어
@@ -37,7 +61,7 @@ func SetupMiddleware(e *echo.Echo, cfg *config.Config, logger *logrus.Logger) {
 
 	// Rate Limiting (개발환경에서는 비활성화)
 	if cfg.App.Environment == "production" {
-		e.Use(middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(100)))
+		e.Use(middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(DefaultRateLimitPerMinute)))
 	}
 
 	// 보안 헤더 미들웨어
@@ -60,7 +84,7 @@ func RecoveryMiddleware(logger *logrus.Logger) echo.MiddlewareFunc {
 					}).Error("패닉이 발생했습니다")
 
 					// 클라이언트에게 에러 응답 전송
-					response.InternalError(c, "서버에서 예상치 못한 오류가 발생했습니다", "")
+					_ = response.InternalError(c, "서버에서 예상치 못한 오류가 발생했습니다", "")
 				}
 			}()
 			return next(c)
@@ -92,7 +116,7 @@ func RequestLoggingMiddleware(logger *logrus.Logger) echo.MiddlewareFunc {
 			if err != nil {
 				entry.WithError(err).Error("요청 처리 중 오류가 발생했습니다")
 			} else {
-				if c.Response().Status >= 400 {
+				if c.Response().Status >= HTTPErrorStatusThreshold {
 					entry.Warn("클라이언트 오류 응답")
 				} else {
 					entry.Info("요청 처리 완료")
@@ -163,16 +187,16 @@ func ErrorHandlingMiddleware(logger *logrus.Logger) echo.HTTPErrorHandler {
 		// Echo HTTP Error 처리
 		if he, ok := err.(*echo.HTTPError); ok {
 			switch he.Code {
-			case 400:
-				response.BadRequest(c, fmt.Sprintf("%v", he.Message), "")
-			case 401:
-				response.Unauthorized(c, fmt.Sprintf("%v", he.Message))
-			case 403:
-				response.Forbidden(c, fmt.Sprintf("%v", he.Message))
-			case 404:
-				response.NotFound(c, fmt.Sprintf("%v", he.Message))
+			case HTTPBadRequest:
+				_ = response.BadRequest(c, fmt.Sprintf("%v", he.Message), "")
+			case HTTPUnauthorized:
+				_ = response.Unauthorized(c, fmt.Sprintf("%v", he.Message))
+			case HTTPForbidden:
+				_ = response.Forbidden(c, fmt.Sprintf("%v", he.Message))
+			case HTTPNotFound:
+				_ = response.NotFound(c, fmt.Sprintf("%v", he.Message))
 			default:
-				response.InternalError(c, fmt.Sprintf("%v", he.Message), "")
+				_ = response.InternalError(c, fmt.Sprintf("%v", he.Message), "")
 			}
 		} else {
 			// 일반 에러 처리
@@ -183,7 +207,7 @@ func ErrorHandlingMiddleware(logger *logrus.Logger) echo.HTTPErrorHandler {
 				"ip":     c.RealIP(),
 			}).Error("처리되지 않은 에러가 발생했습니다")
 
-			response.InternalError(c, "내부 서버 오류가 발생했습니다", err.Error())
+			_ = response.InternalError(c, "내부 서버 오류가 발생했습니다", err.Error())
 		}
 	}
 }

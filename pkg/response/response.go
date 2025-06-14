@@ -1,3 +1,5 @@
+// Package response provides standardized HTTP response utilities for DataLocker API.
+// It includes success, error, and various HTTP status code response helpers.
 package response
 
 import (

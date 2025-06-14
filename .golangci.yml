@@ -1,0 +1,131 @@
+run:
+  timeout: 5m
+  issues-exit-code: 1
+  tests: true
+
+output:
+  formats:
+    - format: colored-line-number
+
+linters-settings:
+  govet:
+    enable:
+      - shadow
+  gocyclo:
+    min-complexity: 15
+  dupl:
+    threshold: 100
+  goconst:
+    min-len: 2
+    min-occurrences: 2
+  misspell:
+    locale: US
+  lll:
+    line-length: 140
+  goimports:
+    local-prefixes: DataLocker
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - performance
+      - style
+    disabled-checks:
+      - dupImport
+      - ifElseChain
+      - octalLiteral
+      - whyNoLint
+      - wrapperFunc
+      - paramTypeCombine
+      - httpNoBody
+      - unnamedResult
+  funlen:
+    lines: 100
+    statements: 50
+  depguard:
+    rules:
+      main:
+        allow:
+          - $gostd
+          - github.com/labstack/echo
+          - github.com/sirupsen/logrus
+          - github.com/wailsapp/wails
+          - github.com/stretchr/testify
+          - gorm.io
+          - DataLocker
+  # mnd 설정 수정 (올바른 형식)
+  mnd:
+    ignored-numbers: 
+      - '100'
+      - '400'
+      - '401'
+      - '403'
+      - '404'
+      - '500'
+      - '1024'
+      - '768'
+      - '86400'
+      - '27'
+      - '38'
+      - '54'
+      - '30'
+      - '10'
+      - '24'
+      - '60'
+
+linters:
+  enable:
+    - bodyclose
+    - errcheck
+    - gochecknoinits
+    - goconst
+    - gocritic
+    - gocyclo
+    - gofmt
+    - goimports
+    - mnd
+    - gosec
+    - gosimple
+    - govet
+    - ineffassign
+    - misspell
+    - nakedret
+    - staticcheck
+    - typecheck
+    - unconvert
+    - unused
+    - whitespace
+  disable:
+    - stylecheck  # 패키지 주석 체크 비활성화
+    - unparam     # 사용되지 않는 파라미터 체크 비활성화
+    - funlen      # 함수 길이 체크 비활성화
+    - lll         # 줄 길이 체크 비활성화
+
+issues:
+  exclude-dirs:
+    - vendor
+    - build
+    - frontend
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - mnd
+        - funlen
+        - gocyclo
+        - dupl
+        - gocritic
+    - path: cmd/
+      linters:
+        - gochecknoinits
+    - path: main.go
+      linters:
+        - mnd  # main.go에서 magic number 허용
+    # 에러 핸들러에서는 errcheck 무시
+    - path: internal/middleware/
+      text: "Error return value.*is not checked"
+      linters:
+        - errcheck
+  exclude-use-default: false
+
+severity:
+  default-severity: error
+  case-sensitive: false

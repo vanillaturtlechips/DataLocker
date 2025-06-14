@@ -1,9 +1,6 @@
 package main
 
 import (
-	"DataLocker/internal/config"
-	"DataLocker/internal/handler"
-	"DataLocker/internal/middleware"
 	"context"
 	"fmt"
 	"net/http"
@@ -14,6 +11,10 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/sirupsen/logrus"
+
+	"DataLocker/internal/config"
+	"DataLocker/internal/handler"
+	"DataLocker/internal/middleware"
 )
 
 func main() {
