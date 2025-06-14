@@ -27,3 +27,12 @@ npm-debug.log*
 
 # Coverage
 coverage/
+
+# Configuration files (보통 포맷팅하지 않음)
+*.config.js
+*.config.ts
+.eslintrc.cjs
+
+# Lock files
+package-lock.json
+yarn.lock
