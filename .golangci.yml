@@ -52,26 +52,25 @@ linters-settings:
           - github.com/stretchr/testify
           - gorm.io
           - DataLocker
-  # Magic Number 설정을 관대하게
+  # mnd 설정 수정 (올바른 형식)
   mnd:
-    settings:
-      mnd:
-        # HTTP 상태 코드, 시간 관련 상수 등 허용
-        ignored-numbers: 
-          - '100'
-          - '400'
-          - '401'
-          - '403'
-          - '404'
-          - '500'
-          - '1024'
-          - '768'
-          - '86400'
-          - '27'
-          - '38'
-          - '54'
-          - '30'
-          - '10'
+    ignored-numbers: 
+      - '100'
+      - '400'
+      - '401'
+      - '403'
+      - '404'
+      - '500'
+      - '1024'
+      - '768'
+      - '86400'
+      - '27'
+      - '38'
+      - '54'
+      - '30'
+      - '10'
+      - '24'
+      - '60'
 
 linters:
   enable:
