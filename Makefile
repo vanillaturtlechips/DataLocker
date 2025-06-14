@@ -18,7 +18,7 @@ GOMOD := $(GOCMD) mod
 LDFLAGS := -ldflags "-X main.version=$(VERSION) -X main.buildTime=$(shell date -u +%Y%m%d.%H%M%S)"
 
 # 기본 타겟
-.PHONY: all build clean test run dev deps help
+.PHONY: all build clean test run dev deps help crypto-test
 
 # 기본 명령어
 all: deps test build
@@ -48,6 +48,7 @@ deps:
 	@$(GOGET) github.com/sirupsen/logrus
 	@$(GOGET) gorm.io/gorm
 	@$(GOGET) gorm.io/driver/sqlite
+	@$(GOGET) golang.org/x/crypto
 	@$(GOMOD) tidy
 	@echo "✅ 의존성 설치 완료"
 
@@ -56,12 +57,29 @@ test:
 	@echo "🧪 테스트를 실행합니다..."
 	@$(GOTEST) -v ./...
 
+# 암호화 모듈 테스트만 실행
+crypto-test:
+	@echo "🔐 암호화 모듈 테스트를 실행합니다..."
+	@$(GOTEST) -v ./pkg/crypto/...
+
 # 테스트 커버리지
 test-coverage:
 	@echo "📊 테스트 커버리지를 확인합니다..."
 	@$(GOTEST) -coverprofile=coverage.out ./...
 	@$(GOCMD) tool cover -html=coverage.out -o coverage.html
 	@echo "✅ 커버리지 리포트: coverage.html"
+
+# 암호화 모듈 커버리지
+crypto-coverage:
+	@echo "🔐 암호화 모듈 커버리지를 확인합니다..."
+	@$(GOTEST) -coverprofile=crypto-coverage.out ./pkg/crypto/...
+	@$(GOCMD) tool cover -html=crypto-coverage.out -o crypto-coverage.html
+	@echo "✅ 암호화 모듈 커버리지: crypto-coverage.html"
+
+# 벤치마크 테스트
+bench:
+	@echo "⚡ 벤치마크 테스트를 실행합니다..."
+	@$(GOTEST) -bench=. -benchmem ./pkg/crypto/...
 
 # 린트 검사
 lint:
@@ -79,6 +97,7 @@ clean:
 	@$(GOCLEAN)
 	@rm -rf $(BUILD_DIR)
 	@rm -f coverage.out coverage.html
+	@rm -f crypto-coverage.out crypto-coverage.html
 	@echo "✅ 정리 완료"
 
 # 헬스체크 테스트
@@ -102,16 +121,19 @@ air:
 help:
 	@echo "DataLocker Build Commands:"
 	@echo ""
-	@echo "  make dev           - 개발 서버 실행"
-	@echo "  make build         - 애플리케이션 빌드"
-	@echo "  make run           - 빌드된 서버 실행"
-	@echo "  make test          - 테스트 실행"
-	@echo "  make test-coverage - 테스트 커버리지 확인"
-	@echo "  make deps          - 의존성 설치"
-	@echo "  make clean         - 빌드 파일 정리"
-	@echo "  make fmt           - 코드 포맷팅"
-	@echo "  make lint          - 린트 검사"
-	@echo "  make health-check  - 헬스체크 테스트"
-	@echo "  make install-tools - 개발 도구 설치"
-	@echo "  make air           - 핫 리로드 개발 서버"
-	@echo "  make help          - 이 도움말 표시"
+	@echo "  make dev             - 개발 서버 실행"
+	@echo "  make build           - 애플리케이션 빌드"
+	@echo "  make run             - 빌드된 서버 실행"
+	@echo "  make test            - 전체 테스트 실행"
+	@echo "  make crypto-test     - 암호화 모듈 테스트만 실행"
+	@echo "  make test-coverage   - 전체 테스트 커버리지 확인"
+	@echo "  make crypto-coverage - 암호화 모듈 커버리지 확인"
+	@echo "  make bench           - 벤치마크 테스트 실행"
+	@echo "  make deps            - 의존성 설치"
+	@echo "  make clean           - 빌드 파일 정리"
+	@echo "  make fmt             - 코드 포맷팅"
+	@echo "  make lint            - 린트 검사"
+	@echo "  make health-check    - 헬스체크 테스트"
+	@echo "  make install-tools   - 개발 도구 설치"
+	@echo "  make air             - 핫 리로드 개발 서버"
+	@echo "  make help            - 이 도움말 표시"
