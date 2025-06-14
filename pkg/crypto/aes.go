@@ -30,6 +30,17 @@ const (
 
 	// 파일 청크 크기 (1MB)
 	ChunkSize = 1024 * 1024
+
+	// 청크 크기 정보를 저장할 바이트 수
+	ChunkSizeBytes = 4
+
+	// 비트 시프트 상수
+	BitShift8  = 8
+	BitShift16 = 16
+	BitShift24 = 24
+
+	// 최대 청크 크기 (4GB)
+	MaxChunkSize = 1<<32 - 1
 )
 
 // CryptoEngine AES 암복호화 엔진
@@ -181,8 +192,8 @@ func (ce *CryptoEngine) EncryptStream(reader io.Reader, writer io.Writer, passwo
 	}
 
 	// Salt를 파일 시작 부분에 저장
-	if _, err := writer.Write(salt); err != nil {
-		return fmt.Errorf("salt 저장 실패: %w", err)
+	if _, writeErr := writer.Write(salt); writeErr != nil {
+		return fmt.Errorf("salt 저장 실패: %w", writeErr)
 	}
 
 	// 키 유도
@@ -203,44 +214,49 @@ func (ce *CryptoEngine) EncryptStream(reader io.Reader, writer io.Writer, passwo
 	// 청크 단위로 암호화
 	buffer := make([]byte, ChunkSize)
 	for {
-		n, err := reader.Read(buffer)
-		if err == io.EOF {
+		n, readErr := reader.Read(buffer)
+		if readErr == io.EOF {
 			break
 		}
-		if err != nil {
-			return fmt.Errorf("데이터 읽기 실패: %w", err)
+		if readErr != nil {
+			return fmt.Errorf("데이터 읽기 실패: %w", readErr)
 		}
 
 		// 각 청크마다 새로운 nonce 생성
-		nonce, err := ce.GenerateNonce()
-		if err != nil {
-			return fmt.Errorf("nonce 생성 실패: %w", err)
+		nonce, nonceErr := ce.GenerateNonce()
+		if nonceErr != nil {
+			return fmt.Errorf("nonce 생성 실패: %w", nonceErr)
 		}
 
 		// Nonce 저장
-		if _, err := writer.Write(nonce); err != nil {
-			return fmt.Errorf("nonce 저장 실패: %w", err)
+		if _, writeErr := writer.Write(nonce); writeErr != nil {
+			return fmt.Errorf("nonce 저장 실패: %w", writeErr)
 		}
 
 		// 청크 암호화
 		chunk := buffer[:n]
 		ciphertext := gcm.Seal(nil, nonce, chunk, nil)
 
-		// 암호화된 청크 크기 저장 (4바이트)
-		chunkSize := uint32(len(ciphertext))
+		// 암호화된 청크 크기 검증 및 저장
+		ciphertextLen := len(ciphertext)
+		if ciphertextLen > MaxChunkSize {
+			return fmt.Errorf("청크 크기가 너무 큽니다: %d bytes", ciphertextLen)
+		}
+
+		chunkSize := uint32(ciphertextLen)
 		sizeBytes := []byte{
-			byte(chunkSize >> 24),
-			byte(chunkSize >> 16),
-			byte(chunkSize >> 8),
+			byte(chunkSize >> BitShift24),
+			byte(chunkSize >> BitShift16),
+			byte(chunkSize >> BitShift8),
 			byte(chunkSize),
 		}
-		if _, err := writer.Write(sizeBytes); err != nil {
-			return fmt.Errorf("청크 크기 저장 실패: %w", err)
+		if _, writeErr := writer.Write(sizeBytes); writeErr != nil {
+			return fmt.Errorf("청크 크기 저장 실패: %w", writeErr)
 		}
 
 		// 암호화된 데이터 저장
-		if _, err := writer.Write(ciphertext); err != nil {
-			return fmt.Errorf("암호화된 데이터 저장 실패: %w", err)
+		if _, writeErr := writer.Write(ciphertext); writeErr != nil {
+			return fmt.Errorf("암호화된 데이터 저장 실패: %w", writeErr)
 		}
 	}
 
@@ -278,43 +294,43 @@ func (ce *CryptoEngine) DecryptStream(reader io.Reader, writer io.Writer, passwo
 	for {
 		// Nonce 읽기
 		nonce := make([]byte, NonceSize)
-		n, err := reader.Read(nonce)
-		if err == io.EOF {
+		n, readErr := reader.Read(nonce)
+		if readErr == io.EOF {
 			break
 		}
-		if err != nil {
-			return fmt.Errorf("nonce 읽기 실패: %w", err)
+		if readErr != nil {
+			return fmt.Errorf("nonce 읽기 실패: %w", readErr)
 		}
 		if n != NonceSize {
 			return fmt.Errorf("잘못된 nonce 크기: %d", n)
 		}
 
 		// 청크 크기 읽기
-		sizeBytes := make([]byte, 4)
-		if _, err := io.ReadFull(reader, sizeBytes); err != nil {
-			return fmt.Errorf("청크 크기 읽기 실패: %w", err)
+		sizeBytes := make([]byte, ChunkSizeBytes)
+		if _, readFullErr := io.ReadFull(reader, sizeBytes); readFullErr != nil {
+			return fmt.Errorf("청크 크기 읽기 실패: %w", readFullErr)
 		}
 
-		chunkSize := uint32(sizeBytes[0])<<24 |
-			uint32(sizeBytes[1])<<16 |
-			uint32(sizeBytes[2])<<8 |
+		chunkSize := uint32(sizeBytes[0])<<BitShift24 |
+			uint32(sizeBytes[1])<<BitShift16 |
+			uint32(sizeBytes[2])<<BitShift8 |
 			uint32(sizeBytes[3])
 
 		// 암호화된 데이터 읽기
 		ciphertext := make([]byte, chunkSize)
-		if _, err := io.ReadFull(reader, ciphertext); err != nil {
-			return fmt.Errorf("암호화된 데이터 읽기 실패: %w", err)
+		if _, readFullErr := io.ReadFull(reader, ciphertext); readFullErr != nil {
+			return fmt.Errorf("암호화된 데이터 읽기 실패: %w", readFullErr)
 		}
 
 		// 복호화
-		plaintext, err := gcm.Open(nil, nonce, ciphertext, nil)
-		if err != nil {
-			return fmt.Errorf("복호화 실패: %w", err)
+		plaintext, decryptErr := gcm.Open(nil, nonce, ciphertext, nil)
+		if decryptErr != nil {
+			return fmt.Errorf("복호화 실패: %w", decryptErr)
 		}
 
 		// 복호화된 데이터 저장
-		if _, err := writer.Write(plaintext); err != nil {
-			return fmt.Errorf("복호화된 데이터 저장 실패: %w", err)
+		if _, writeErr := writer.Write(plaintext); writeErr != nil {
+			return fmt.Errorf("복호화된 데이터 저장 실패: %w", writeErr)
 		}
 	}
 
