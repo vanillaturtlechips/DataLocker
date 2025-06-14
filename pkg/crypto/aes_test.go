@@ -9,6 +9,24 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// 테스트용 상수
+const (
+	TestPassword      = "testpassword"
+	TestData          = "Hello, DataLocker!"
+	LongTestData      = "DataLocker는 안전한 파일 암호화 솔루션입니다. "
+	BenchmarkPassword = "benchmarkpassword"
+	StreamPassword    = "streampassword"
+	LongDataRepeat    = 100
+	BenchmarkRepeat   = 100
+	StreamTestRepeat  = 1000
+)
+
+// 테스트용 데이터
+var (
+	testBinaryData = []byte{0x00, 0x01, 0x02, 0xFF, 0xFE, 0xFD}
+	testSalt       = []byte("testsalt12345678901234567890123")
+)
+
 func TestNewCryptoEngine(t *testing.T) {
 	engine := NewCryptoEngine()
 	assert.NotNil(t, engine)
@@ -42,18 +60,16 @@ func TestGenerateNonce(t *testing.T) {
 
 func TestDeriveKey(t *testing.T) {
 	engine := NewCryptoEngine()
-	salt := []byte("testsalt12345678901234567890123")
-	password := "testpassword"
 
-	key := engine.DeriveKey(password, salt)
+	key := engine.DeriveKey(TestPassword, testSalt)
 	assert.Len(t, key, KeySize)
 
 	// 같은 패스워드와 salt로는 같은 키가 나와야 함
-	key2 := engine.DeriveKey(password, salt)
+	key2 := engine.DeriveKey(TestPassword, testSalt)
 	assert.Equal(t, key, key2)
 
 	// 다른 패스워드로는 다른 키가 나와야 함
-	key3 := engine.DeriveKey("differentpassword", salt)
+	key3 := engine.DeriveKey("differentpassword", testSalt)
 	assert.NotEqual(t, key, key3)
 }
 
@@ -67,7 +83,7 @@ func TestEncryptDecrypt_Success(t *testing.T) {
 	}{
 		{
 			name:     "작은 텍스트 데이터",
-			data:     []byte("Hello, DataLocker!"),
+			data:     []byte(TestData),
 			password: "mypassword123",
 		},
 		{
@@ -77,12 +93,12 @@ func TestEncryptDecrypt_Success(t *testing.T) {
 		},
 		{
 			name:     "긴 텍스트 데이터",
-			data:     []byte(strings.Repeat("DataLocker는 안전한 파일 암호화 솔루션입니다. ", 100)),
+			data:     []byte(strings.Repeat(LongTestData, LongDataRepeat)),
 			password: "verysecurepassword!@#$",
 		},
 		{
 			name:     "바이너리 데이터",
-			data:     []byte{0x00, 0x01, 0x02, 0xFF, 0xFE, 0xFD},
+			data:     testBinaryData,
 			password: "binarytest",
 		},
 	}
@@ -229,14 +245,13 @@ func TestDecrypt_WrongPassword(t *testing.T) {
 func TestEncryptStream_Success(t *testing.T) {
 	engine := NewCryptoEngine()
 
-	testData := []byte(strings.Repeat("DataLocker Stream Test ", 1000))
-	password := "streampassword"
+	testData := []byte(strings.Repeat("DataLocker Stream Test ", StreamTestRepeat))
 
 	// 암호화
 	var encryptedBuf bytes.Buffer
 	reader := bytes.NewReader(testData)
 
-	err := engine.EncryptStream(reader, &encryptedBuf, password)
+	err := engine.EncryptStream(reader, &encryptedBuf, StreamPassword)
 	require.NoError(t, err)
 	assert.Greater(t, encryptedBuf.Len(), len(testData))
 
@@ -244,7 +259,7 @@ func TestEncryptStream_Success(t *testing.T) {
 	var decryptedBuf bytes.Buffer
 	encryptedReader := bytes.NewReader(encryptedBuf.Bytes())
 
-	err = engine.DecryptStream(encryptedReader, &decryptedBuf, password)
+	err = engine.DecryptStream(encryptedReader, &decryptedBuf, StreamPassword)
 	require.NoError(t, err)
 	assert.Equal(t, testData, decryptedBuf.Bytes())
 }
@@ -331,12 +346,11 @@ func TestEncryptDecryptStream_WrongPassword(t *testing.T) {
 // 벤치마크 테스트
 func BenchmarkEncrypt(b *testing.B) {
 	engine := NewCryptoEngine()
-	data := []byte(strings.Repeat("benchmark test data ", 100))
-	password := "benchmarkpassword"
+	data := []byte(strings.Repeat("benchmark test data ", BenchmarkRepeat))
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, err := engine.Encrypt(data, password)
+		_, err := engine.Encrypt(data, BenchmarkPassword)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -345,17 +359,58 @@ func BenchmarkEncrypt(b *testing.B) {
 
 func BenchmarkDecrypt(b *testing.B) {
 	engine := NewCryptoEngine()
-	data := []byte(strings.Repeat("benchmark test data ", 100))
-	password := "benchmarkpassword"
+	data := []byte(strings.Repeat("benchmark test data ", BenchmarkRepeat))
 
-	encData, err := engine.Encrypt(data, password)
+	encData, err := engine.Encrypt(data, BenchmarkPassword)
 	if err != nil {
 		b.Fatal(err)
 	}
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, err := engine.Decrypt(encData, password)
+		_, err := engine.Decrypt(encData, BenchmarkPassword)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkEncryptStream(b *testing.B) {
+	engine := NewCryptoEngine()
+	data := []byte(strings.Repeat("stream benchmark test data ", StreamTestRepeat))
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		var buf bytes.Buffer
+		reader := bytes.NewReader(data)
+
+		err := engine.EncryptStream(reader, &buf, BenchmarkPassword)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkDecryptStream(b *testing.B) {
+	engine := NewCryptoEngine()
+	data := []byte(strings.Repeat("stream benchmark test data ", StreamTestRepeat))
+
+	// 미리 암호화된 데이터 준비
+	var encryptedBuf bytes.Buffer
+	reader := bytes.NewReader(data)
+	err := engine.EncryptStream(reader, &encryptedBuf, BenchmarkPassword)
+	if err != nil {
+		b.Fatal(err)
+	}
+
+	encryptedData := encryptedBuf.Bytes()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		var buf bytes.Buffer
+		reader := bytes.NewReader(encryptedData)
+
+		err := engine.DecryptStream(reader, &buf, BenchmarkPassword)
 		if err != nil {
 			b.Fatal(err)
 		}
