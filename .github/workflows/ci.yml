@@ -7,9 +7,9 @@ on:
     branches: [ main, develop ]
 
 jobs:
-  # Frontend 린트 및 테스트
+  # Frontend 린트 및 빌드
   frontend-check:
-    name: Frontend Lint & Test
+    name: Frontend Lint & Build
     runs-on: ubuntu-latest
     
     steps:
@@ -21,12 +21,12 @@ jobs:
       with:
         node-version: '18'
         cache: 'npm'
-        cache-dependency-path: frontend/package-lock.json
+        cache-dependency-path: frontend/package.json
         
     - name: Install frontend dependencies
       working-directory: ./frontend
-      run: npm ci
-      
+      run: npm install
+        
     - name: Run ESLint
       working-directory: ./frontend
       run: npm run lint
@@ -42,16 +42,29 @@ jobs:
     - name: Build frontend
       working-directory: ./frontend
       run: npm run build
+      
+    - name: Upload frontend dist
+      uses: actions/upload-artifact@v4
+      with:
+        name: frontend-dist
+        path: frontend/dist/
 
   # Backend 린트 및 테스트
   backend-check:
     name: Backend Lint & Test
     runs-on: ubuntu-latest
+    needs: frontend-check
     
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
       
+    - name: Download frontend dist
+      uses: actions/download-artifact@v4
+      with:
+        name: frontend-dist
+        path: frontend/dist/
+        
     - name: Setup Go
       uses: actions/setup-go@v5
       with:
@@ -67,57 +80,24 @@ jobs:
           
     - name: Install dependencies
       run: go mod download
-      
+        
     - name: Run golangci-lint
       uses: golangci/golangci-lint-action@v6
       with:
         version: latest
         
     - name: Run tests
-      run: go test -v -race -coverprofile=coverage.out ./...
-      
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v4
-      with:
-        file: ./coverage.out
-        flags: backend
-        name: backend-coverage
+      run: go test -v -race ./...
         
     - name: Build backend
       run: make build
 
-  # 통합 빌드 테스트 (Wails)
-  integration-build:
-    name: Integration Build (Wails)
-    runs-on: ubuntu-latest
-    needs: [frontend-check, backend-check]
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Setup Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: '1.21'
-        
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-        
-    - name: Install Wails
-      run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
-      
-    - name: Install frontend dependencies
-      working-directory: ./frontend
-      run: npm ci
-      
-    - name: Build with Wails
-      run: wails build
-      
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: datalocker-build
-        path: build/bin/*
+    # TODO: 나중에 깃허브 토큰 추가할 자리
+    # - name:
+    #   uses: 
+    #   with:
+    #     file: 
+    #     flags: 
+    #     name:
+    #     token: 
+    #     fail_ci_if_error: false
