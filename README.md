@@ -1,24 +1,134 @@
-<<<<<<< HEAD
-# README
+# DataLocker v2.0
 
-## About
+파일 및 폴더 DRM/암복호화 솔루션
 
-This is the official Wails React-TS template.
+## 🏗️ 프로젝트 구조
 
-You can configure the project by editing `wails.json`. More information about the project settings can be found
-here: https://wails.io/docs/reference/project-config
+```
+DataLocker/
+├── cmd/server/              # 서버 진입점
+│   └── main.go
+├── internal/                # 내부 패키지
+│   ├── config/             # 설정 관리
+│   ├── handler/            # HTTP 핸들러
+│   ├── middleware/         # 미들웨어
+│   ├── service/            # 비즈니스 로직
+│   ├── repository/         # 데이터 접근 계층
+│   └── model/              # 데이터 모델
+├── pkg/                    # 공용 패키지
+│   ├── crypto/             # 암호화 유틸리티
+│   ├── fileutil/          # 파일 유틸리티
+│   └── response/          # API 응답 유틸리티
+├── frontend/               # Wails React 프론트엔드
+├── test/                   # 테스트 파일
+├── docs/                   # 문서
+└── build/                  # 빌드 결과물
+```
 
-## Live Development
+## 🚀 빠른 시작
 
-To run in live development mode, run `wails dev` in the project directory. This will run a Vite development
-server that will provide very fast hot reload of your frontend changes. If you want to develop in a browser
-and have access to your Go methods, there is also a dev server that runs on http://localhost:34115. Connect
-to this in your browser, and you can call your Go code from devtools.
+### 1. 의존성 설치
+```bash
+make deps
+```
 
-## Building
+### 2. 개발 서버 실행
+```bash
+make dev
+```
 
-To build a redistributable, production mode package, use `wails build`.
-=======
-# DataLocker
-DRM/폴더 및 파일 암복호화 팀프로젝트
->>>>>>> 07904f98ca560afc504d180a65cd92c2c2760b90
+### 3. 헬스체크 확인
+```bash
+curl http://localhost:8080/api/v1/health
+```
+
+## 📋 사용 가능한 명령어
+
+```bash
+make dev           # 개발 서버 실행
+make build         # 애플리케이션 빌드
+make test          # 테스트 실행
+make test-coverage # 테스트 커버리지
+make clean         # 빌드 파일 정리
+make help          # 전체 명령어 보기
+```
+
+## 🔧 개발 도구
+
+### Air (핫 리로드)
+```bash
+make install-tools  # 개발 도구 설치
+make air           # 핫 리로드 서버 실행
+```
+
+## 📡 API 엔드포인트
+
+### 헬스체크
+- `GET /api/v1/health` - 전체 헬스체크
+- `GET /api/v1/health/ready` - 준비 상태 확인
+- `GET /api/v1/health/live` - 라이브니스 확인
+- `GET /api/v1/health/metrics` - 시스템 메트릭
+
+### 기본
+- `GET /` - 서버 정보
+- `GET /docs` - API 문서
+
+## 🧪 테스트
+
+```bash
+# 전체 테스트 실행
+make test
+
+# 커버리지 포함 테스트
+make test-coverage
+
+# 특정 패키지 테스트
+go test ./internal/handler/...
+```
+
+## 📦 기술 스택
+
+- **Backend**: Go + Echo Framework
+- **Frontend**: Wails + React + TypeScript
+- **Database**: SQLite + GORM
+- **Build**: Make + Air (핫 리로드)
+
+## 🔧 환경 변수
+
+```bash
+PORT=8080                    # 서버 포트
+HOST=localhost               # 서버 호스트
+LOG_LEVEL=info              # 로그 레벨
+ENVIRONMENT=development      # 환경 설정
+MAX_FILE_SIZE=1073741824    # 최대 파일 크기 (1GB)
+DB_PATH=./datalocker.db     # 데이터베이스 경로
+```
+
+## 📝 개발 진행 상황
+
+### ✅ 완료된 작업 (이슈 #1)
+- [x] Go 프로젝트 구조 설정
+- [x] Echo 프레임워크 설치 및 기본 서버 설정
+- [x] CORS, 로깅 미들웨어 설정
+- [x] Health check 엔드포인트 구현
+- [x] 기본 에러 핸들링 미들웨어
+- [x] 설정 관리 시스템
+- [x] 응답 유틸리티 패키지
+- [x] 기본 테스트 설정
+
+### 🔄 다음 작업 (이슈 #2)
+- [ ] 핵심 암호화 모듈 구현
+- [ ] AES-256-GCM 암복호화
+- [ ] 파일 스트리밍 처리
+- [ ] 단위 테스트 작성
+
+## 🤝 기여
+
+1. 이슈 확인 및 브랜치 생성
+2. 기능 구현 및 테스트 작성
+3. 커밋 및 푸시
+4. Pull Request 생성
+
+## 📄 라이선스
+
+MIT License
