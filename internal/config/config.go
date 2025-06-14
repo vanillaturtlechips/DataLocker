@@ -1,8 +1,27 @@
+// Package config provides configuration management for DataLocker application.
+// It handles environment variables, default values, and application settings.
 package config
 
 import (
 	"os"
 	"strconv"
+)
+
+// 서버 설정 관련 상수
+const (
+	// 기본 타임아웃 설정 (초)
+	DefaultReadTimeoutSeconds  = 30
+	DefaultWriteTimeoutSeconds = 30
+)
+
+// 파일 크기 관련 상수
+const (
+	BytesPerKB = 1024
+	BytesPerMB = BytesPerKB * 1024
+	BytesPerGB = BytesPerMB * 1024
+
+	// 기본 최대 파일 크기 (1GB)
+	DefaultMaxFileSizeBytes = 1 * BytesPerGB
 )
 
 // Config 애플리케이션 설정 구조체
@@ -47,8 +66,8 @@ func Load() *Config {
 		Server: ServerConfig{
 			Port:         getEnv("PORT", "8080"),
 			Host:         getEnv("HOST", "localhost"),
-			ReadTimeout:  getEnvAsInt("READ_TIMEOUT", 30),
-			WriteTimeout: getEnvAsInt("WRITE_TIMEOUT", 30),
+			ReadTimeout:  getEnvAsInt("READ_TIMEOUT", DefaultReadTimeoutSeconds),
+			WriteTimeout: getEnvAsInt("WRITE_TIMEOUT", DefaultWriteTimeoutSeconds),
 		},
 		Database: DatabaseConfig{
 			Path:        getEnv("DB_PATH", "./datalocker.db"),
@@ -59,7 +78,7 @@ func Load() *Config {
 				getEnv("ALLOWED_ORIGIN", "http://localhost:3000"),
 				"http://localhost:34115", // Wails dev server
 			},
-			MaxFileSize: getEnvAsInt64("MAX_FILE_SIZE", 1024*1024*1024), // 1GB
+			MaxFileSize: getEnvAsInt64("MAX_FILE_SIZE", DefaultMaxFileSizeBytes),
 		},
 		App: AppConfig{
 			Name:        "DataLocker",

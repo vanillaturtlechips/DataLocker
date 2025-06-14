@@ -1,12 +1,15 @@
+// Package handler provides HTTP request handlers for DataLocker API endpoints.
+// It includes health check, metrics, and various API route handlers.
 package handler
 
 import (
-	"DataLocker/internal/config"
-	"DataLocker/pkg/response"
 	"runtime"
 	"time"
 
 	"github.com/labstack/echo/v4"
+
+	"DataLocker/internal/config"
+	"DataLocker/pkg/response"
 )
 
 // HealthHandler 헬스체크 핸들러
