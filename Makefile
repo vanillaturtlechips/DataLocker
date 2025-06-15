@@ -18,7 +18,7 @@ GOMOD := $(GOCMD) mod
 LDFLAGS := -ldflags "-X main.version=$(VERSION) -X main.buildTime=$(shell date -u +%Y%m%d.%H%M%S)"
 
 # 기본 타겟
-.PHONY: all build clean test run dev deps help crypto-test
+.PHONY: all build clean test run dev deps help crypto-test db-test db-coverage db-init db-status
 
 # 기본 명령어
 all: deps test build
@@ -49,6 +49,7 @@ deps:
 	@$(GOGET) gorm.io/gorm
 	@$(GOGET) gorm.io/driver/sqlite
 	@$(GOGET) golang.org/x/crypto
+	@$(GOGET) github.com/stretchr/testify
 	@$(GOMOD) tidy
 	@echo "✅ 의존성 설치 완료"
 
@@ -61,6 +62,11 @@ test:
 crypto-test:
 	@echo "🔐 암호화 모듈 테스트를 실행합니다..."
 	@$(GOTEST) -v ./pkg/crypto/...
+
+# 데이터베이스 모듈 테스트만 실행
+db-test:
+	@echo "🗄️ 데이터베이스 모듈 테스트를 실행합니다..."
+	@$(GOTEST) -v ./internal/database/...
 
 # 테스트 커버리지
 test-coverage:
@@ -76,10 +82,18 @@ crypto-coverage:
 	@$(GOCMD) tool cover -html=crypto-coverage.out -o crypto-coverage.html
 	@echo "✅ 암호화 모듈 커버리지: crypto-coverage.html"
 
+# 데이터베이스 모듈 커버리지
+db-coverage:
+	@echo "🗄️ 데이터베이스 모듈 커버리지를 확인합니다..."
+	@$(GOTEST) -coverprofile=db-coverage.out ./internal/database/...
+	@$(GOCMD) tool cover -html=db-coverage.out -o db-coverage.html
+	@echo "✅ 데이터베이스 모듈 커버리지: db-coverage.html"
+
 # 벤치마크 테스트
 bench:
 	@echo "⚡ 벤치마크 테스트를 실행합니다..."
 	@$(GOTEST) -bench=. -benchmem ./pkg/crypto/...
+	@$(GOTEST) -bench=. -benchmem ./internal/database/...
 
 # 린트 검사
 lint:
@@ -98,6 +112,10 @@ clean:
 	@rm -rf $(BUILD_DIR)
 	@rm -f coverage.out coverage.html
 	@rm -f crypto-coverage.out crypto-coverage.html
+	@rm -f db-coverage.out db-coverage.html
+	@rm -rf ./testdata
+	@rm -f ./datalocker.db
+	@rm -f ./test*.db
 	@echo "✅ 정리 완료"
 
 # 헬스체크 테스트
@@ -117,23 +135,101 @@ air:
 	@echo "🔥 핫 리로드 개발 서버를 시작합니다..."
 	@air
 
+# 데이터베이스 초기화
+db-init:
+	@echo "🗄️ 데이터베이스를 초기화합니다..."
+	@rm -f ./datalocker.db
+	@rm -f ./test*.db
+	@rm -rf ./testdata
+	@echo "✅ 데이터베이스 초기화 완료"
+
+# 데이터베이스 상태 확인
+db-status:
+	@echo "🗄️ 데이터베이스 상태를 확인합니다..."
+	@if [ -f "./datalocker.db" ]; then \
+		echo "📁 datalocker.db 파일 존재"; \
+		sqlite3 ./datalocker.db ".tables" 2>/dev/null | head -10; \
+	else \
+		echo "❌ datalocker.db 파일이 없습니다"; \
+	fi
+
+# 데이터베이스 스키마 확인
+db-schema:
+	@echo "🗄️ 데이터베이스 스키마를 확인합니다..."
+	@if [ -f "./datalocker.db" ]; then \
+		sqlite3 ./datalocker.db ".schema" 2>/dev/null; \
+	else \
+		echo "❌ datalocker.db 파일이 없습니다"; \
+	fi
+
+# 전체 테스트 (모든 모듈)
+test-all:
+	@echo "🧪 전체 모듈 테스트를 실행합니다..."
+	@make crypto-test
+	@make db-test
+
+# 전체 커버리지 (모든 모듈)
+coverage-all:
+	@echo "📊 전체 모듈 커버리지를 확인합니다..."
+	@make crypto-coverage
+	@make db-coverage
+	@make test-coverage
+
+# 개발 환경 설정
+setup-dev:
+	@echo "🛠️ 개발 환경을 설정합니다..."
+	@make deps
+	@make install-tools
+	@make db-init
+	@echo "✅ 개발 환경 설정 완료"
+
+# CI/CD 테스트 (GitHub Actions와 동일한 테스트)
+ci-test:
+	@echo "🔄 CI/CD 테스트를 실행합니다..."
+	@make lint
+	@make test
+	@make build
+	@echo "✅ CI/CD 테스트 완료"
+
 # 도움말
 help:
-	@echo "DataLocker Build Commands:"
+	@echo "📋 DataLocker Build Commands:"
 	@echo ""
+	@echo "🚀 Development:"
 	@echo "  make dev             - 개발 서버 실행"
+	@echo "  make air             - 핫 리로드 개발 서버"
+	@echo "  make setup-dev       - 개발 환경 초기 설정"
+	@echo ""
+	@echo "🔨 Build & Run:"
 	@echo "  make build           - 애플리케이션 빌드"
 	@echo "  make run             - 빌드된 서버 실행"
+	@echo "  make clean           - 빌드 파일 정리"
+	@echo ""
+	@echo "🧪 Testing:"
 	@echo "  make test            - 전체 테스트 실행"
 	@echo "  make crypto-test     - 암호화 모듈 테스트만 실행"
+	@echo "  make db-test         - 데이터베이스 모듈 테스트만 실행"
+	@echo "  make test-all        - 모든 모듈 테스트 실행"
+	@echo "  make bench           - 벤치마크 테스트 실행"
+	@echo "  make ci-test         - CI/CD 스타일 테스트"
+	@echo ""
+	@echo "📊 Coverage:"
 	@echo "  make test-coverage   - 전체 테스트 커버리지 확인"
 	@echo "  make crypto-coverage - 암호화 모듈 커버리지 확인"
-	@echo "  make bench           - 벤치마크 테스트 실행"
+	@echo "  make db-coverage     - 데이터베이스 모듈 커버리지 확인"
+	@echo "  make coverage-all    - 모든 모듈 커버리지 확인"
+	@echo ""
+	@echo "🗄️ Database:"
+	@echo "  make db-init         - 데이터베이스 초기화"
+	@echo "  make db-status       - 데이터베이스 상태 확인"
+	@echo "  make db-schema       - 데이터베이스 스키마 확인"
+	@echo ""
+	@echo "🛠️ Tools:"
 	@echo "  make deps            - 의존성 설치"
-	@echo "  make clean           - 빌드 파일 정리"
+	@echo "  make install-tools   - 개발 도구 설치"
 	@echo "  make fmt             - 코드 포맷팅"
 	@echo "  make lint            - 린트 검사"
 	@echo "  make health-check    - 헬스체크 테스트"
-	@echo "  make install-tools   - 개발 도구 설치"
-	@echo "  make air             - 핫 리로드 개발 서버"
+	@echo ""
+	@echo "ℹ️  Help:"
 	@echo "  make help            - 이 도움말 표시"
