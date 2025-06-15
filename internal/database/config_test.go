@@ -159,9 +159,10 @@ func TestDatabase_GetStats_ClosedConnection(t *testing.T) {
 
 func TestDatabase_ConnectionString(t *testing.T) {
 	testCases := []struct {
-		name         string
-		dbPath       string
-		expectedPath string
+		name           string
+		dbPath         string
+		expectedPath   string
+		skipOnPlatform string // 특정 플랫폼에서 스킵
 	}{
 		{
 			name:         "상대 경로",
@@ -174,9 +175,10 @@ func TestDatabase_ConnectionString(t *testing.T) {
 			expectedPath: "/tmp/test.db",
 		},
 		{
-			name:         "절대 경로 Windows",
-			dbPath:       "C:\\tmp\\test.db",
-			expectedPath: "C:/tmp/test.db",
+			name:           "절대 경로 Windows",
+			dbPath:         "C:\\tmp\\test.db",
+			expectedPath:   "C:/tmp/test.db",
+			skipOnPlatform: "linux", // Linux에서 스킵
 		},
 		{
 			name:         "현재 디렉토리",
@@ -184,14 +186,24 @@ func TestDatabase_ConnectionString(t *testing.T) {
 			expectedPath: "./test.db",
 		},
 		{
-			name:         "Windows 상대 경로",
-			dbPath:       ".\\test.db",
-			expectedPath: "./test.db",
+			name:           "Windows 상대 경로",
+			dbPath:         ".\\test.db",
+			expectedPath:   "./test.db",
+			skipOnPlatform: "linux", // Linux에서 스킵
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			// 플랫폼별 스킵 처리
+			if tc.skipOnPlatform != "" {
+				if (tc.skipOnPlatform == "windows" && isWindows()) ||
+					(tc.skipOnPlatform == "linux" && !isWindows()) {
+					t.Skipf("Skipping test on %s platform", tc.skipOnPlatform)
+					return
+				}
+			}
+
 			cfg := createTestConfig(tc.dbPath)
 			db := &Database{config: cfg}
 
@@ -209,6 +221,11 @@ func TestDatabase_ConnectionString(t *testing.T) {
 			assert.Contains(t, connStr, "_foreign_keys=")
 		})
 	}
+}
+
+// isWindows 현재 플랫폼이 Windows인지 확인합니다
+func isWindows() bool {
+	return filepath.Separator == '\\'
 }
 
 func TestDatabase_SQLitePragmas(t *testing.T) {
