@@ -210,8 +210,8 @@ func GetTableInfo(db *gorm.DB) (map[string]interface{}, error) {
 	tableCounts := make(map[string]int64)
 	for _, table := range tables {
 		var count int64
-		err := db.Raw(fmt.Sprintf("SELECT COUNT(*) FROM %s", table)).Scan(&count).Error
-		if err != nil {
+		countErr := db.Raw(fmt.Sprintf("SELECT COUNT(*) FROM %s", table)).Scan(&count).Error
+		if countErr != nil {
 			// 테이블이 비어있거나 접근할 수 없는 경우 0으로 설정
 			count = 0
 		}

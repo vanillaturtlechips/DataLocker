@@ -82,6 +82,12 @@ const (
 	ExpectedNonceSize = 12
 )
 
+// 반복 횟수 상수
+const (
+	// IterationsToKDivisor 반복 횟수를 K 단위로 변환하는 제수
+	IterationsToKDivisor = 1000
+)
+
 // File 암호화된 파일의 기본 정보를 저장하는 모델
 type File struct {
 	// 기본 필드
@@ -226,10 +232,50 @@ func (em *EncryptionMetadata) BeforeUpdate(tx *gorm.DB) error {
 
 // validate 암호화 메타데이터 검증
 func (em *EncryptionMetadata) validate() error {
+	// 기본 필드 검증
+	if err := em.validateBasicFields(); err != nil {
+		return err
+	}
+
+	// 알고리즘 검증
+	if err := em.validateAlgorithm(); err != nil {
+		return err
+	}
+
+	// 키 유도 방식 검증
+	if err := em.validateKeyDerivation(); err != nil {
+		return err
+	}
+
+	// Salt 검증
+	if err := em.validateSalt(); err != nil {
+		return err
+	}
+
+	// Nonce 검증
+	if err := em.validateNonce(); err != nil {
+		return err
+	}
+
+	// 반복 횟수 검증
+	if err := em.validateIterations(); err != nil {
+		return err
+	}
+
+	// Salt와 Nonce 바이트 크기 검증
+	return em.validateCryptoSizes()
+}
+
+// validateBasicFields 기본 필드 검증
+func (em *EncryptionMetadata) validateBasicFields() error {
 	if em.FileID == 0 {
 		return ErrInvalidFileID
 	}
+	return nil
+}
 
+// validateAlgorithm 알고리즘 검증
+func (em *EncryptionMetadata) validateAlgorithm() error {
 	if em.Algorithm == "" {
 		return ErrEmptyAlgorithm
 	}
@@ -242,6 +288,11 @@ func (em *EncryptionMetadata) validate() error {
 		return ErrInvalidAlgorithm
 	}
 
+	return nil
+}
+
+// validateKeyDerivation 키 유도 방식 검증
+func (em *EncryptionMetadata) validateKeyDerivation() error {
 	if em.KeyDerivation == "" {
 		return ErrEmptyKeyDerivation
 	}
@@ -254,6 +305,11 @@ func (em *EncryptionMetadata) validate() error {
 		return ErrInvalidKeyDerivation
 	}
 
+	return nil
+}
+
+// validateSalt Salt 검증
+func (em *EncryptionMetadata) validateSalt() error {
 	if em.SaltHex == "" {
 		return ErrEmptySalt
 	}
@@ -266,6 +322,11 @@ func (em *EncryptionMetadata) validate() error {
 		return ErrInvalidSaltHex
 	}
 
+	return nil
+}
+
+// validateNonce Nonce 검증
+func (em *EncryptionMetadata) validateNonce() error {
 	if em.NonceHex == "" {
 		return ErrEmptyNonce
 	}
@@ -278,13 +339,13 @@ func (em *EncryptionMetadata) validate() error {
 		return ErrInvalidNonceHex
 	}
 
+	return nil
+}
+
+// validateIterations 반복 횟수 검증
+func (em *EncryptionMetadata) validateIterations() error {
 	if em.Iterations < MinIterations || em.Iterations > MaxIterations {
 		return ErrInvalidIterations
-	}
-
-	// Salt와 Nonce 바이트 크기 검증
-	if err := em.validateCryptoSizes(); err != nil {
-		return err
 	}
 
 	return nil
@@ -442,6 +503,6 @@ func (em *EncryptionMetadata) IsPBKDF2SHA256() bool {
 
 // GetIterationsString 반복 횟수를 문자열로 반환 (K 단위)
 func (em *EncryptionMetadata) GetIterationsString() string {
-	iterations := em.Iterations / 1000
+	iterations := em.Iterations / IterationsToKDivisor
 	return fmt.Sprintf("%dK", iterations)
 }
