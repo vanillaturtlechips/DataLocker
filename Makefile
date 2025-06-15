@@ -100,10 +100,20 @@ lint:
 	@echo "🔍 코드 린트를 실행합니다..."
 	@golangci-lint run
 
+lint-fix:
+	@echo "🔧 린트 오류를 자동 수정합니다..."
+	@golangci-lint run --fix
+
 # 포맷팅
 fmt:
 	@echo "✨ 코드를 포맷팅합니다..."
-	@$(GOCMD) fmt ./...
+	@go fmt ./...
+	@goimports -local DataLocker -w .
+	@echo "✅ 포맷팅 완료"
+
+fmt-check:
+	@echo "🔍 포맷팅 검사를 실행합니다..."
+	@test -z $(shell gofmt -l .) || (echo "다음 파일들이 포맷팅이 필요합니다:" && gofmt -l . && exit 1)
 
 # 정리
 clean:

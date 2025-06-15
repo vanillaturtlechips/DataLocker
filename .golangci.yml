@@ -52,7 +52,6 @@ linters-settings:
           - github.com/stretchr/testify
           - gorm.io
           - DataLocker
-  # mnd 설정 수정 (올바른 형식)
   mnd:
     ignored-numbers: 
       - '100'
@@ -80,8 +79,8 @@ linters:
     - goconst
     - gocritic
     - gocyclo
-    - gofmt
-    - goimports
+    - gofmt          # ⭐ 포맷팅 강제
+    - goimports      # ⭐ import 정리 + 포맷팅
     - mnd
     - gosec
     - gosimple
@@ -93,7 +92,8 @@ linters:
     - typecheck
     - unconvert
     - unused
-    - whitespace
+    - whitespace     # ⭐ 공백 체크
+    - gofumpt        # ⭐ 더 엄격한 포맷팅 (gofmt의 강화판)
   disable:
     - stylecheck  # 패키지 주석 체크 비활성화
     - unparam     # 사용되지 않는 파라미터 체크 비활성화
