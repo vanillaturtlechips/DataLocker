@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
+	"DataLocker/internal/config"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"DataLocker/internal/config"
 )
 
 // 테스트용 상수
@@ -18,7 +18,7 @@ const (
 	TestDBPath  = "./test_datalocker.db"
 	TestDBDir   = "./testdata"
 	TestTimeout = 5 * time.Second
-	TestDirPerm = 0750 // gosec 권장: rwxr-x---
+	TestDirPerm = 0o750 // gosec 권장: rwxr-x---
 )
 
 // createTestConfig 테스트용 설정을 생성합니다

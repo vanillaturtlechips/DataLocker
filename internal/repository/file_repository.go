@@ -5,9 +5,9 @@ package repository
 import (
 	"fmt"
 
-	"gorm.io/gorm"
-
 	"DataLocker/internal/model"
+
+	"gorm.io/gorm"
 )
 
 // 페이지네이션 관련 상수
@@ -100,7 +100,6 @@ func (r *fileRepository) GetAll(offset, limit int) ([]*model.File, int64, error)
 		Limit(limit).
 		Order("created_at DESC").
 		Find(&files).Error
-
 	if err != nil {
 		return nil, 0, fmt.Errorf("파일 목록 조회 실패: %w", err)
 	}
@@ -187,7 +186,6 @@ func (r *fileRepository) GetByStatus(status string, offset, limit int) ([]*model
 		Limit(limit).
 		Order("created_at DESC").
 		Find(&files).Error
-
 	if err != nil {
 		return nil, 0, fmt.Errorf("상태별 파일 목록 조회 실패: %w", err)
 	}
@@ -205,7 +203,6 @@ func (r *fileRepository) GetByChecksumMD5(checksum string) (*model.File, error) 
 	err := r.db.Preload("EncryptionMetadata").
 		Where("checksum_md5 = ?", checksum).
 		First(&file).Error
-
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, nil // 중복이 없음을 나타내기 위해 nil 반환

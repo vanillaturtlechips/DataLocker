@@ -18,7 +18,7 @@ import (
 const (
 	TestDBDir    = "./testdata"
 	TestDBFile   = "test_model.db"
-	TestDirPerm  = 0750
+	TestDirPerm  = 0o750
 	TestSaltHex  = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" // 32 bytes
 	TestNonceHex = "0123456789abcdef01234567"                                         // 12 bytes
 )

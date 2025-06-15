@@ -104,12 +104,19 @@ lint-fix:
 	@echo "🔧 린트 오류를 자동 수정합니다..."
 	@golangci-lint run --fix
 
-# 포맷팅
+# 포맷팅 (go fmt + goimports 사용)
 fmt:
 	@echo "✨ 코드를 포맷팅합니다..."
 	@go fmt ./...
 	@goimports -local DataLocker -w .
 	@echo "✅ 포맷팅 완료"
+
+# 고급 포맷팅 (gofumpt 사용 - 선택적)
+fmt-strict:
+	@echo "✨ 엄격한 코드 포맷팅을 실행합니다..."
+	@gofumpt -w .
+	@goimports -local DataLocker -w .
+	@echo "✅ 엄격한 포맷팅 완료"
 
 fmt-check:
 	@echo "🔍 포맷팅 검사를 실행합니다..."
@@ -138,6 +145,8 @@ install-tools:
 	@echo "🛠️ 개발 도구를 설치합니다..."
 	@$(GOGET) github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 	@$(GOGET) github.com/air-verse/air@latest
+	@$(GOGET) mvdan.cc/gofumpt@latest
+	@$(GOGET) golang.org/x/tools/cmd/goimports@latest
 	@echo "✅ 개발 도구 설치 완료"
 
 # 핫 리로드 개발 서버
@@ -196,10 +205,17 @@ setup-dev:
 # CI/CD 테스트 (GitHub Actions와 동일한 테스트)
 ci-test:
 	@echo "🔄 CI/CD 테스트를 실행합니다..."
+	@make fmt
 	@make lint
 	@make test
 	@make build
 	@echo "✅ CI/CD 테스트 완료"
+
+# 포맷팅 후 린트 실행 (개발 시 유용)
+format-and-lint:
+	@echo "✨ 포맷팅 후 린트를 실행합니다..."
+	@make fmt
+	@make lint
 
 # 도움말
 help:
@@ -237,8 +253,12 @@ help:
 	@echo "🛠️ Tools:"
 	@echo "  make deps            - 의존성 설치"
 	@echo "  make install-tools   - 개발 도구 설치"
-	@echo "  make fmt             - 코드 포맷팅"
+	@echo "  make fmt             - 기본 코드 포맷팅 (go fmt + goimports)"
+	@echo "  make fmt-strict      - 엄격한 코드 포맷팅 (gofumpt + goimports)"
+	@echo "  make fmt-check       - 포맷팅 검사"
 	@echo "  make lint            - 린트 검사"
+	@echo "  make lint-fix        - 린트 오류 자동 수정"
+	@echo "  make format-and-lint - 포맷팅 후 린트 실행"
 	@echo "  make health-check    - 헬스체크 테스트"
 	@echo ""
 	@echo "ℹ️  Help:"

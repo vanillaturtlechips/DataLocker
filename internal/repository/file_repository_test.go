@@ -7,19 +7,19 @@ import (
 	"testing"
 	"time"
 
+	"DataLocker/internal/model"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
-
-	"DataLocker/internal/model"
 )
 
 // 테스트용 상수
 const (
 	TestDBDir           = "./testdata"
-	TestDirPerm         = 0750
+	TestDirPerm         = 0o750
 	TestValidChecksum   = "d41d8cd98f00b204e9800998ecf8427e"
 	TestLargeFileSize   = 1048576 // 1MB
 	TestSmallFileSize   = 1024    // 1KB

@@ -8,11 +8,11 @@ import (
 	"strings"
 	"time"
 
+	"DataLocker/internal/config"
+
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
-
-	"DataLocker/internal/config"
 )
 
 // 데이터베이스 관련 상수
@@ -33,7 +33,7 @@ const (
 	BusyTimeoutMs = 30000
 
 	// 파일 권한
-	DBFilePermission = 0600
+	DBFilePermission = 0o600
 )
 
 // Database 데이터베이스 연결 관리자

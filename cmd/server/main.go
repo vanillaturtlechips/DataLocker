@@ -9,12 +9,12 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/labstack/echo/v4"
-	"github.com/sirupsen/logrus"
-
 	"DataLocker/internal/config"
 	"DataLocker/internal/handler"
 	"DataLocker/internal/middleware"
+
+	"github.com/labstack/echo/v4"
+	"github.com/sirupsen/logrus"
 )
 
 func main() {
