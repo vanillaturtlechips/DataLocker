@@ -32,11 +32,25 @@ func setupTestDB(t *testing.T) (*gorm.DB, func()) {
 	// 고유한 테스트 DB 파일명 생성
 	dbPath := filepath.Join(TestDBDir, "test_"+t.Name()+".db")
 
-	// 데이터베이스 연결
-	db, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{
+	// 데이터베이스 연결 (외래키 활성화 포함)
+	dsn := dbPath + "?_foreign_keys=ON&_journal_mode=WAL&_sync=NORMAL"
+	db, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Silent), // 테스트 시 로그 최소화
 	})
 	require.NoError(t, err)
+
+	// 외래키 제약조건 명시적 활성화
+	err = db.Exec("PRAGMA foreign_keys = ON").Error
+	require.NoError(t, err)
+
+	// 외래키 활성화 확인
+	var foreignKeysEnabled string
+	err = db.Raw("PRAGMA foreign_keys").Scan(&foreignKeysEnabled).Error
+	require.NoError(t, err)
+
+	if foreignKeysEnabled != "1" {
+		t.Logf("경고: 외래키 제약조건이 완전히 활성화되지 않았습니다 (값: %s)", foreignKeysEnabled)
+	}
 
 	// 마이그레이션 실행
 	err = Migrate(db)
