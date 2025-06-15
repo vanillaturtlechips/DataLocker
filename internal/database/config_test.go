@@ -18,6 +18,7 @@ const (
 	TestDBPath  = "./test_datalocker.db"
 	TestDBDir   = "./testdata"
 	TestTimeout = 5 * time.Second
+	TestDirPerm = 0750 // gosec 권장: rwxr-x---
 )
 
 // createTestConfig 테스트용 설정을 생성합니다
@@ -35,8 +36,8 @@ func createTestConfig(dbPath string) *config.Config {
 
 // setupTestDB 테스트용 데이터베이스를 설정합니다
 func setupTestDB(t *testing.T) (*Database, func()) {
-	// 테스트 디렉토리 생성
-	err := os.MkdirAll(TestDBDir, 0755)
+	// 테스트 디렉토리 생성 (보안 강화된 권한)
+	err := os.MkdirAll(TestDBDir, TestDirPerm)
 	require.NoError(t, err)
 
 	// 고유한 테스트 DB 파일명 생성
