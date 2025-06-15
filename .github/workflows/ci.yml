@@ -25,7 +25,7 @@ jobs:
         
     - name: Install frontend dependencies
       working-directory: ./frontend
-      run: npm install
+      run: npm ci
         
     - name: Run ESLint
       working-directory: ./frontend
@@ -69,14 +69,7 @@ jobs:
       uses: actions/setup-go@v5
       with:
         go-version: '1.21'
-        
-    - name: Cache Go modules
-      uses: actions/cache@v4
-      with:
-        path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-        restore-keys: |
-          ${{ runner.os }}-go-
+        cache: true
           
     - name: Install dependencies
       run: go mod download
@@ -85,19 +78,10 @@ jobs:
       uses: golangci/golangci-lint-action@v6
       with:
         version: latest
+        args: --timeout=5m
         
     - name: Run tests
       run: go test -v -race ./...
         
     - name: Build backend
       run: make build
-
-    # TODO: 나중에 깃허브 토큰 추가할 자리
-    # - name:
-    #   uses: 
-    #   with:
-    #     file: 
-    #     flags: 
-    #     name:
-    #     token: 
-    #     fail_ci_if_error: false
