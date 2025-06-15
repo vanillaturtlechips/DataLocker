@@ -6,10 +6,10 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/labstack/echo/v4"
-
 	"DataLocker/internal/config"
 	"DataLocker/pkg/response"
+
+	"github.com/labstack/echo/v4"
 )
 
 // HealthHandler 헬스체크 핸들러

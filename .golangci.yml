@@ -2,12 +2,15 @@ run:
   timeout: 5m
   issues-exit-code: 1
   tests: true
+  go: "1.21"  # 여기로 이동
 
 output:
   formats:
     - format: colored-line-number
 
 linters-settings:
+  gofumpt:
+    extra-rules: true  # lang-version 제거
   govet:
     enable:
       - shadow
@@ -52,9 +55,8 @@ linters-settings:
           - github.com/stretchr/testify
           - gorm.io
           - DataLocker
-  # mnd 설정 수정 (올바른 형식)
   mnd:
-    ignored-numbers: 
+    ignored-numbers:
       - '100'
       - '400'
       - '401'
@@ -80,8 +82,7 @@ linters:
     - goconst
     - gocritic
     - gocyclo
-    - gofmt
-    - goimports
+    - goimports      # ⭐ import 정리 + 포맷팅
     - mnd
     - gosec
     - gosimple
@@ -93,12 +94,14 @@ linters:
     - typecheck
     - unconvert
     - unused
-    - whitespace
+    - whitespace     # ⭐ 공백 체크
   disable:
-    - stylecheck  # 패키지 주석 체크 비활성화
-    - unparam     # 사용되지 않는 파라미터 체크 비활성화
-    - funlen      # 함수 길이 체크 비활성화
-    - lll         # 줄 길이 체크 비활성화
+    - gofmt          # ⭐ gofmt 비활성화
+    - gofumpt        # ⭐ 임시로 gofumpt 비활성화 (문제 해결까지)
+    - stylecheck     # 패키지 주석 체크 비활성화
+    - unparam        # 사용되지 않는 파라미터 체크 비활성화
+    - funlen         # 함수 길이 체크 비활성화
+    - lll            # 줄 길이 체크 비활성화
 
 issues:
   exclude-dirs:

@@ -6,13 +6,13 @@ import (
 	"path/filepath"
 	"testing"
 
+	"DataLocker/internal/model"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
-
-	"DataLocker/internal/model"
 )
 
 // 테스트용 상수
@@ -24,7 +24,7 @@ const (
 
 // setupEncTestDB 테스트용 데이터베이스 설정
 func setupEncTestDB(t *testing.T) (*gorm.DB, func()) {
-	err := os.MkdirAll("./testdata", 0750)
+	err := os.MkdirAll("./testdata", 0o750)
 	require.NoError(t, err)
 
 	dbPath := filepath.Join("./testdata", "test_enc_"+t.Name()+".db")

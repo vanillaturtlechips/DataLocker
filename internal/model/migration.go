@@ -290,7 +290,6 @@ func ValidateSchema(db *gorm.DB) error {
 		AND name='encryption_metadata' 
 		AND sql LIKE '%REFERENCES%files%'
 	`).Scan(&constraintCount).Error
-
 	if err != nil {
 		return fmt.Errorf("외래키 제약조건 확인 실패: %w", err)
 	}

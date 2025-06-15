@@ -5,9 +5,9 @@ package repository
 import (
 	"fmt"
 
-	"gorm.io/gorm"
-
 	"DataLocker/internal/model"
+
+	"gorm.io/gorm"
 )
 
 // EncryptionRepository 암호화 메타데이터 저장소 인터페이스
@@ -193,7 +193,6 @@ func (r *encryptionRepository) GetByAlgorithm(algorithm string, offset, limit in
 		Limit(limit).
 		Order("created_at DESC").
 		Find(&metadataList).Error
-
 	if err != nil {
 		return nil, 0, fmt.Errorf("알고리즘별 암호화 메타데이터 목록 조회 실패: %w", err)
 	}
