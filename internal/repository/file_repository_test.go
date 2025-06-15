@@ -615,8 +615,8 @@ func TestFileRepository_Count_Success(t *testing.T) {
 	fileCount := 5
 	for i := 0; i < fileCount; i++ {
 		file := createTestFile(fmt.Sprintf("_count_%d", i))
-		err := repo.Create(file)
-		require.NoError(t, err)
+		createErr := repo.Create(file)
+		require.NoError(t, createErr)
 	}
 
 	// 생성 후 카운트 확인
@@ -625,8 +625,8 @@ func TestFileRepository_Count_Success(t *testing.T) {
 	assert.Equal(t, int64(fileCount), count)
 
 	// 파일 하나 삭제
-	err = repo.Delete(TestValidFileID)
-	require.NoError(t, err)
+	deleteErr := repo.Delete(TestValidFileID)
+	require.NoError(t, deleteErr)
 
 	// 삭제 후 카운트 확인 (소프트 삭제이므로 카운트 감소)
 	count, err = repo.Count()
@@ -839,19 +839,19 @@ func TestFileRepository_DataIntegrity(t *testing.T) {
 		file1 := createTestFile("_integrity1")
 		file1.ChecksumMD5 = checksum
 		file1.EncryptedPath = "/encrypted/integrity1.enc"
-		err := repo.Create(file1)
-		require.NoError(t, err)
+		err1 := repo.Create(file1)
+		require.NoError(t, err1)
 
 		// 같은 체크섬으로 두 번째 파일 생성
 		file2 := createTestFile("_integrity2")
 		file2.ChecksumMD5 = checksum
 		file2.EncryptedPath = "/encrypted/integrity2.enc"
-		createErr := repo.Create(file2)
-		require.NoError(t, createErr) // 체크섬 중복은 허용
+		err2 := repo.Create(file2)
+		require.NoError(t, err2) // 체크섬 중복은 허용
 
 		// 체크섬으로 조회 시 첫 번째 파일이 반환되는지 확인
-		foundFile, err := repo.GetByChecksumMD5(checksum)
-		require.NoError(t, err)
+		foundFile, err3 := repo.GetByChecksumMD5(checksum)
+		require.NoError(t, err3)
 		require.NotNil(t, foundFile)
 		assert.Equal(t, file1.ID, foundFile.ID) // 첫 번째 생성된 파일
 	})
